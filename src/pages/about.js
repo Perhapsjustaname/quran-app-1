@@ -14,7 +14,7 @@ function About() {
                     السَّلَامُ عَلَيْكُمْ<br></br> Please use the form below to submit suggestions
                     </p>
                     <p>
-                    <iframe src="https://flowyform.com/form/salafiquran" width="100%" height="600"></iframe>
+                    <iframe title="survey" src="https://flowyform.com/form/salafiquran" width="100%" height="600"></iframe>
                     </p>
                     <p>
                         
