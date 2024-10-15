@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import Modal from "../components/modal";
 import gsap from "gsap";
 import AyatLoading from "../components/ayat loading";
+import translations from '../output.json';
 
 function Surah() {
     const [loading, setLoading] = useState(true);
@@ -15,10 +16,19 @@ function Surah() {
         JSON.parse(localStorage.getItem("bookmark"))
     );
     const [ayat, setAyat] = useState([]);
-    const [translate, setTranslate] = useState([]);
+    const [translate, setTranslate] = useState([]); 
+
+   
+
+ 
     const [error, setError] = useState([]);
     const params = useParams();
     const navigate = useNavigate();
+
+    const getLocalTranslations = (surahNumber) => {
+        return translations.filter((item) => item[0] === parseInt(surahNumber));
+    };
+
 
     const playAudio = (data) => {
         const audio = document.getElementById(data);
@@ -83,79 +93,50 @@ function Surah() {
         endedLastRead();
     };
 
+    
     const handleBookmark = (data) => {
-        if (localStorage.getItem("bookmark") === null) {
-            localStorage.setItem("bookmark", JSON.stringify([data]));
-            setLocal([data]);
-        } else if (
-            JSON.parse(localStorage.getItem("bookmark")).some(
-                (e) => e.data.number === data.data.number
-            )
-        ) {
-            const lastData = JSON.parse(localStorage.getItem("bookmark"));
-            const dataALl = lastData.filter(
-                (book) => book.data.number !== data.data.number
-            );
-            localStorage.setItem("bookmark", JSON.stringify(dataALl));
-            setLocal(dataALl);
+        const currentBookmarks = JSON.parse(localStorage.getItem("bookmark")) || [];
+        const isBookmarked = currentBookmarks.some((e) => e.data.number === data.data.number);
+
+        if (isBookmarked) {
+            const updatedBookmarks = currentBookmarks.filter((e) => e.data.number !== data.data.number);
+            localStorage.setItem("bookmark", JSON.stringify(updatedBookmarks));
+            setLocal(updatedBookmarks);
         } else {
-            const lastData = JSON.parse(localStorage.getItem("bookmark"));
-            const dataAll = [...lastData, data];
-            localStorage.setItem("bookmark", JSON.stringify(dataAll));
-            setLocal(dataAll);
+            const updatedBookmarks = [...currentBookmarks, data];
+            localStorage.setItem("bookmark", JSON.stringify(updatedBookmarks));
+            setLocal(updatedBookmarks);
         }
     };
-
     useEffect(() => {
         setLoading(true);
+
         const getAyatList = async () => {
-            await fetch(
-                `https://api.alquran.cloud/v1/surah/${params.id}/editions/ar.abdulbasitmurattal`
-            )
-                .then((response) => {
-                    if (response.ok) {
-                        return response.json();
-                    }
-                    throw new Error("Something went wrong");
-                })
-                .then((responseJson) => {
-                    setAyat(responseJson.data[0].ayahs);
-                    setDetails(responseJson.data[0]);
-                    setLoading(false);
-                })
-                .catch((error) => {
-                    setError(error);
-                    console.log(error);
-                });
+            try {
+                const response = await fetch(`https://api.alquran.cloud/v1/surah/${params.id}/editions/ar.husary`);
+                if (!response.ok) throw new Error("Something went wrong");
+                const responseJson = await response.json();
+                setAyat(responseJson.data[0].ayahs);
+                setDetails(responseJson.data[0]);
+                setLoading(false);
+            } catch (error) {
+                setError(error);
+                console.error(error);
+            }
         };
-        const getTranslate = async () => {
-            await fetch(
-                `https://api.alquran.cloud/v1/surah/${params.id}/id.indonesian`
-            )
-                .then((response) => {
-                    if (response.ok) {
-                        return response.json();
-                    }
-                    throw new Error("Something went wrong");
-                })
-                .then((responseJson) => {
-                    setTranslate(responseJson.data.ayahs);
-                })
-                .catch((error) => {
-                    setError(error);
-                    console.log(error);
-                });
-        };
-        const scrollTop = () => {
-            window.scrollTo({
-                top: 0,
-                behavior: "smooth",
-            });
-        };
+        setLoading(true);
         getAyatList();
-        getTranslate();
-        scrollTop();
+        window.scrollTo({ top: 0, behavior: "smooth" });
     }, [params.id]);
+
+    useEffect(() => {
+        if (ayat.length > 0) {
+            const translationsForSurah = getLocalTranslations(params.id);
+            setTranslate(translationsForSurah);
+        }
+    }, [ayat, params.id]);
+
+
 
     return (
         <div className="relative w-full min-h-screen bg-white dark:bg-bg_dark">
@@ -210,9 +191,11 @@ function Surah() {
                 <div className="flex flex-col gap-3 pb-7">
                     {ayat &&
                         ayat.map((data, index) => {
+                            const translation = translate[index]?.[2] || "Translation not available.";
+                        const footnote = translate[index]?.[3] || "No footnotes available.";
                             return (
                                 <div id={data.number} className="w-full h-fit">
-                                    <div className="flex items-center justify-between w-full px-5 mb-5 rounded-xl h-14 text-main bg-main/10 dark:bg-light_primary/10">
+                                    <div className="flex items-center justify-between w-full px-5 mb-5 rounded-xl h-14 text-main bg-main/10 dark:bg-light_primary">
                                         <p className="px-4 text-lg font-light text-center text-white rounded-full bg-main">
                                             {data.numberInSurah}
                                         </p>
@@ -272,8 +255,7 @@ function Surah() {
                                                         data,
                                                         surah: details.number,
                                                         translate:
-                                                            translate[index]
-                                                                ?.text,
+                                                            translation,
                                                     })
                                                 }
                                             >
@@ -350,19 +332,11 @@ function Surah() {
                                             </button>
                                         </div>
                                     </div>
-                                    <div className="flex flex-col gap-4 mb-5">
-                                        <p className="self-end w-full text-4xl text-right">
-                                            {index === 0 && params.id !== "1"
-                                                ? data?.text.replace(
-                                                      "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ",
-                                                      ""
-                                                  )
-                                                : data?.text}
-                                        </p>
-                                        <p className="text-gray-500">
-                                            {translate[index]?.text}
-                                        </p>
-                                    </div>
+                                    <div className="flex flex-col gap-4">
+                                    <p className="text-4xl text-right">{data.text}</p>
+                                    <p className="text-white-500">{translation}</p>
+                                    <p className="text-sm text-gray-400">{footnote}</p>
+                                </div>
                                     <div className="w-full h-[0.5px] mb-5 bg-gray-500"></div>
                                 </div>
                             );
@@ -372,7 +346,7 @@ function Surah() {
             </div>
             <Modal
                 id="modalLastRead"
-                title={"Do you really want to mark this verse as last read?"}
+                title={"Mark this verse as last read?"}
                 show={show}
                 no={() => handleClickNo()}
                 yes={() => handleClickYes()}

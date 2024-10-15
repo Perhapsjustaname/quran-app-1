@@ -65,13 +65,13 @@ function Home() {
         <div className="relative w-full min-h-screen bg-white dark:bg-bg_dark">
             <div className="py-5">
                 <div className="flex flex-row items-center justify-between mb-7">
-                    <h1 className="text-xl font-bold text-main dark:text-light_secondary">
-                        Quran Web App
+                    <h1 className="text-2xl font-bold text-main dark:text-light_secondary">
+                        Salafi Quran
                     </h1>
                 </div>
                 <div className="mb-5">
-                    <p className="text-lg text-gray-500">Assalamu'alaikum</p>
-                    <p className="text-2xl font-semibold">Hamba Allah</p>
+                    
+                    <p className="text-l font-semibold">Quran with Salafi translation</p>
                 </div>
                 <div className="flex items-center justify-center mb-10">
                     <div onClick={(e) => handleClickHeader(e,last?.surah?.number)} className="relative flex items-start w-full h-40 overflow-hidden rounded-2xl bg-gradient-to-r from-light_secondary to-main">
