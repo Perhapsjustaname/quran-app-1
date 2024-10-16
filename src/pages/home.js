@@ -66,12 +66,12 @@ function Home() {
             <div className="py-5">
                 <div className="flex flex-row items-center justify-between mb-7">
                     <h1 className="text-2xl font-bold text-main dark:text-light_secondary">
-                        Salafi Quran
+                        Salafi Quran Translation
                     </h1>
                 </div>
                 <div className="mb-5">
                     
-                    <p className="text-l font-semibold">Quran with Salafi translation</p>
+                    <p className="text-l font-semibold">Scholarly-approved revision of Saheeh International as per the creed of the Companions of the Prophet ﷺ (i.e., the Salaf)</p>
                 </div>
                 <div className="flex items-center justify-center mb-10">
                     <div onClick={(e) => handleClickHeader(e,last?.surah?.number)} className="relative flex items-start w-full h-40 overflow-hidden rounded-2xl bg-gradient-to-r from-light_secondary to-main">
