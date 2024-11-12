@@ -107,14 +107,16 @@ function Home() {
                 </div>
                 {loading && <SurahLoading></SurahLoading>}
                 <div className="flex flex-col gap-5 pb-20">
-                    {data &&
-                        data.map((data) => {
-                            return (
-                                <div
-                                    onClick={(e) => handleClickSurah(e)}
-                                    id={data.number}
-                                    className="flex flex-col gap-5 cursor-pointer"
-                                >
+                {data &&
+    data.map((data) => {
+        return (
+            <div
+                key={data.number} 
+                onClick={(e) => handleClickSurah(e)}
+                id={data.number}
+                className="flex flex-col gap-5 cursor-pointer"
+            >
+
                                     <div className="flex flex-row items-center justify-between">
                                         <div className="flex flex-row items-center gap-6 px-3">
                                             <div className="relative flex items-center justify-center w-3 h-3">

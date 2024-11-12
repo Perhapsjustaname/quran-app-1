@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import Modal from "../components/modal";
 import gsap from "gsap";
 import AyatLoading from "../components/ayat loading";
-import translations from '../output.json';
+
 
 function Surah() {
     const [loading, setLoading] = useState(true);
@@ -25,9 +25,8 @@ function Surah() {
     const params = useParams();
     const navigate = useNavigate();
 
-    const getLocalTranslations = (surahNumber) => {
-        return translations.filter((item) => item[0] === parseInt(surahNumber));
-    };
+    
+    
 
 
     const playAudio = (data) => {
@@ -110,31 +109,43 @@ function Surah() {
     };
     useEffect(() => {
         setLoading(true);
-
+    
         const getAyatList = async () => {
             try {
                 const response = await fetch(`https://api.alquran.cloud/v1/surah/${params.id}/editions/ar.husary`);
                 if (!response.ok) throw new Error("Something went wrong");
+    
                 const responseJson = await response.json();
-                setAyat(responseJson.data[0].ayahs);
+                const ayatData = responseJson.data[0].ayahs;
+                setAyat(ayatData);
                 setDetails(responseJson.data[0]);
+                
+                // Fetch translation for each ayah
+                const translations = await Promise.all(
+                    ayatData.map(async (ayah) => {
+                        const translationResponse = await fetch(`https://script.google.com/macros/s/AKfycbw7RA4esWZN6KwrNyibtOhraZ0xMNOu46aDFFwT5PAiZNFxBpCvSdjVdM1M6tyonzc5Lw/exec?surah=${params.id}&ayah=${ayah.numberInSurah}`);
+                        if (!translationResponse.ok) throw new Error("Failed to fetch translation");
+                        const translationData = await translationResponse.json();
+                        console.log(translationData[2]);  // Check the structure here
+                        return translationData[2].translation; 
+ 
+                    })
+                );
+    
+                setTranslate(translations);
                 setLoading(false);
             } catch (error) {
-                setError(error);
+                setError(error.message);
                 console.error(error);
+                setLoading(false);
             }
         };
-        setLoading(true);
+    
         getAyatList();
         window.scrollTo({ top: 0, behavior: "smooth" });
     }, [params.id]);
-
-    useEffect(() => {
-        if (ayat.length > 0) {
-            const translationsForSurah = getLocalTranslations(params.id);
-            setTranslate(translationsForSurah);
-        }
-    }, [ayat, params.id]);
+    
+   
 
 
 
@@ -191,10 +202,15 @@ function Surah() {
                 <div className="flex flex-col gap-3 pb-7">
                     {ayat &&
                         ayat.map((data, index) => {
-                            const translation = translate[index]?.[2] || "Translation not available.";
-                        const footnote = translate[index]?.[3] || "No footnotes available.";
+                            const displayText = (data.numberInSurah === 1 && params.id !== "1" && params.id !== "9") 
+    ? data.text.replace("بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ", "")
+    : data.text;
+
+    const translation = translate[index] || ""; 
+
+                        const footnote = translate[index]?.[3] || "";
                             return (
-                                <div id={data.number} className="w-full h-fit">
+                                <div key={data.number} id={data.number} className="w-full h-fit">
                                     <div className="flex items-center justify-between w-full px-5 mb-5 rounded-xl h-14 text-main bg-main/10 dark:bg-light_primary">
                                         <p className="px-4 text-lg font-light text-center text-white rounded-full bg-main">
                                             {data.numberInSurah}
@@ -333,7 +349,8 @@ function Surah() {
                                         </div>
                                     </div>
                                     <div className="flex flex-col gap-4">
-                                    <p className="text-4xl text-right">{data.text}</p>
+                                    <p className="text-4xl text-right">{displayText}</p>
+
                                     <p className="text-white-500">{translation}</p>
                                     <p className="text-sm text-gray-400">{footnote}</p>
                                 </div>
