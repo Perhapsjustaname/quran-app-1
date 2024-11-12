@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import Modal from "../components/modal";
 import gsap from "gsap";
 import AyatLoading from "../components/ayat loading";
+ 
 
 
 function Surah() {
@@ -119,21 +120,32 @@ function Surah() {
                 const ayatData = responseJson.data[0].ayahs;
                 setAyat(ayatData);
                 setDetails(responseJson.data[0]);
-                
+    
                 // Fetch translation for each ayah
                 const translations = await Promise.all(
                     ayatData.map(async (ayah) => {
                         const translationResponse = await fetch(`https://script.google.com/macros/s/AKfycbw7RA4esWZN6KwrNyibtOhraZ0xMNOu46aDFFwT5PAiZNFxBpCvSdjVdM1M6tyonzc5Lw/exec?surah=${params.id}&ayah=${ayah.numberInSurah}`);
                         if (!translationResponse.ok) throw new Error("Failed to fetch translation");
                         const translationData = await translationResponse.json();
-                        console.log(translationData[2]);  // Check the structure here
-                        return translationData[2].translation; 
- 
+    
+                        // Check the translation structure
+                        console.log('Translation Data:', translationData);
+                        console.log('Translation Data[2]:', translationData[2]);
+    
+                        // Return translation directly from the string if no separate field is available
+                        return translationData[2] || 'Translation not available';
                     })
                 );
     
-                setTranslate(translations);
-                setLoading(false);
+                // Log translations after Promise.all resolves
+                console.log("Translations array:", translations); // Now it should show the full translations
+                // Introduce a delay of 2 seconds before updating the state and displaying content
+                setTimeout(() => {
+                    setTranslate(translations); // Set the translations
+                    setLoading(false); // Set loading to false to hide animation
+                }, 0);  //delay until loaded
+    
+                
             } catch (error) {
                 setError(error.message);
                 console.error(error);
@@ -145,7 +157,9 @@ function Surah() {
         window.scrollTo({ top: 0, behavior: "smooth" });
     }, [params.id]);
     
-   
+    if (loading) {
+        return <div className="loading-spinner">Loading...</div>;
+    }
 
 
 
@@ -206,9 +220,9 @@ function Surah() {
     ? data.text.replace("بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ", "")
     : data.text;
 
-    const translation = translate[index] || ""; 
+    const translation = translate[index] || "Translation not available"; 
 
-                        const footnote = translate[index]?.[3] || "";
+                        
                             return (
                                 <div key={data.number} id={data.number} className="w-full h-fit">
                                     <div className="flex items-center justify-between w-full px-5 mb-5 rounded-xl h-14 text-main bg-main/10 dark:bg-light_primary">
@@ -351,8 +365,21 @@ function Surah() {
                                     <div className="flex flex-col gap-4">
                                     <p className="text-4xl text-right">{displayText}</p>
 
-                                    <p className="text-white-500">{translation}</p>
-                                    <p className="text-sm text-gray-400">{footnote}</p>
+                                    <p className="text-white-500">
+  {/* Use dangerouslySetInnerHTML but add extra styling to non-bold text */}
+  {translation.split('<b>').map((part, index) => {
+    if (index === 0) return part;
+    const [boldText, remainder] = part.split('</b>');
+    return (
+      <React.Fragment key={index}>
+        <b style={{ color: 'black' }}>{boldText}</b>
+        <span style={{ color: '#4a4a4a', fontSize: '0.9rem' }}>{remainder}</span>
+      </React.Fragment>
+    );
+  })}
+</p>
+
+                                    
                                 </div>
                                     <div className="w-full h-[0.5px] mb-5 bg-gray-500"></div>
                                 </div>
